@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>event sourcing Archives | Domenic Cassisi</title>
+	<atom:link href="/tag/event-sourcing/feed/" rel="self" type="application/rss+xml" />
+	<link>/tag/event-sourcing/</link>
+	<description>Personal Blog</description>
+	<lastBuildDate>Sun, 25 Sep 2022 13:07:35 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=6.1.1</generator>
+
+<image>
+	<url>/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
+	<title>event sourcing Archives | Domenic Cassisi</title>
+	<link>/tag/event-sourcing/</link>
+	<width>32</width>
+	<height>32</height>
+</image> 
+	<item>
+		<title>How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</title>
+		<link>/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/</link>
+		
+		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
+		<pubDate>Sun, 25 Sep 2022 13:07:34 +0000</pubDate>
+				<category><![CDATA[Domain-Driven Design]]></category>
+		<category><![CDATA[Event Sourcing]]></category>
+		<category><![CDATA[Software Architecture]]></category>
+		<category><![CDATA[clean architecture]]></category>
+		<category><![CDATA[ddd]]></category>
+		<category><![CDATA[domain-driven design]]></category>
+		<category><![CDATA[event sourcing]]></category>
+		<guid isPermaLink="false">/?p=235</guid>
+
+					<description><![CDATA[<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out my previous post for more information. Today, I would like to focus on combining Event Sourcing with [&#8230;]</p>
+<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[
+<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out <a href="/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">my previous post</a> for more information.</p>
+
+
+
+<p>Today, I would like to focus on combining Event Sourcing with DDD. Additionally, I want to illustrate that the &#8220;domain model&#8221; approach fits well with the clean architecture style described by Robert C. Martin. Depending on the source of reference, the clean architecture style is also known as onion architecture or hexagonal architecture. Although those notions might differ in detail, all of them focus on the separation of concerns by organizing software code into multiple layers, with the domain layer taking the center place.</p>
+
+
+
+<p>DDD does not require Event Sourcing. If we, however, decide to use Event Sourcing for our domain model, we refer to our domain model as <em>an event-sourced domain model</em>. This definition, which I first read about in <em>Learning Domain-Driven Design</em> (Vlad Khononov), emphasizes that the domain model is stored as a sequence of events rather than its current state.</p>
+
+
+
+<h2>The example scenario</h2>
+
+
+
+<p>Domain-Driven Design is most suited for complex domains. In our case, we use a (rather simple) library domain for lending and returning books. A <em>reader</em> can borrow a <em>book</em>, return a book, reserve a book, clear a reservation, etc.</p>
+
+
+
+<p>In a real-life application, there are many subdomains and bounded contexts to consider, for example, lending, shipping, catalog, charging, reader management, and the like. Today, we just focus on the <em>lending subdomain</em>.</p>
+
+
+
+<p>The lending subdomain knows about books and readers. In addition, a book is associated with its loans. Both book and reader represent aggregates, while the concept of a loan is part of a book. It is to be noted that there are several options to build such a domain model, with each approach coming with a different set of trade-offs. Ultimately, the most appropriate solution strongly depends on the concrete business environment.</p>
+
+
+
+<h2>Fundamentals</h2>
+
+
+
+<p>Alright! Let&#8217;s jump into some source code. The following code snippets are written using the Kotlin programming language, nevertheless, the source code is rather straightforward and should look similar to many other higher-level programming languages. The full source code is available <a href="https://github.com/DomenicDev/personal-blog-examples/tree/main/simple-library">here</a>.</p>
+
+
+
+<p>The first thing to define is the concept of an aggregate. An aggregate can be clearly identified by its identifier (ID). A possible contract of an aggregate might look as follows:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="interface Aggregate<ID&gt; {
+
+    fun getId(): ID
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">interface</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Aggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">ID</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">getId</span><span style="color: #ECEFF4">()</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ID</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>An event-sourced aggregate needs to be able to load its state from the previous sequence of events and return any changes (events) that have not yet been saved. Therefore, the concept of an event-sourced aggregate requires at least two more contracts. </p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="interface EventSourcedAggregate<ID, EventType&gt; : Aggregate<ID&gt; {
+
+    /**
+     * Builds the current state of that aggregate
+     * from the history of previously stored events.
+     */
+    fun loadFromHistory(events: List<EventType&gt;)
+
+    /**
+     * Returns a list of events that have occurred
+     * after the aggregate got initialized.
+     */
+    fun getChanges(): List<EventType&gt;
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">interface</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventSourcedAggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">ID</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB; font-style: italic">Aggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">ID</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">/**</span></span>
+<span class="line"><span style="color: #616E88">     * Builds the current state of that aggregate</span></span>
+<span class="line"><span style="color: #616E88">     * from the history of previously stored events.</span></span>
+<span class="line"><span style="color: #616E88">     */</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">loadFromHistory</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">events</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">List</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">/**</span></span>
+<span class="line"><span style="color: #616E88">     * Returns a list of events that have occurred</span></span>
+<span class="line"><span style="color: #616E88">     * after the aggregate got initialized.</span></span>
+<span class="line"><span style="color: #616E88">     */</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">getChanges</span><span style="color: #ECEFF4">()</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">List</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p></p>
+
+
+
+<blockquote class="wp-block-quote"><p><strong>Note about versioning:</strong> Event Sourcing often uses optimistic locking for appending events to an event store. This requires applying some kind of versioning to our aggregates in order to check if the aggregate was updated simultaneously, e.g. by another thread or process. In this blog, however, we omit the versioning aspect for reasons of clarity. Refer to <a href="https://github.com/DomenicDev/master-thesis-library-app/blob/main/domain-services/lending-service/domain/src/main/kotlin/de/cassisi/lending/common/BaseAggregate.kt">my more feature-rich library implementation</a> for how versioning can be implemented.  </p></blockquote>
+
+
+
+<p>A straightforward base class implementation of that interface might look like the following class:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="abstract class BaseAggregate<ID, EventType&gt; (private val id: ID): EventSourcedAggregate<ID, EventType&gt; {
+
+    /**
+     * The list changes (events) stored as a mutable list.
+     */
+    private val changes = mutableListOf<EventType&gt;()
+
+    override fun getId(): ID {
+        return this.id
+    }
+
+    override fun loadFromHistory(events: List<EventType&gt;) {
+        events.forEach { handleEvent(it) }
+    }
+
+    override fun getChanges(): List<EventType&gt; {
+        return this.changes.toList()
+    }
+
+    /**
+     * Adds the specified event to the list
+     * of changes and invokes the handleEvent()
+     * method for applying that event.
+     */
+    fun registerEvent(event: EventType) {
+        changes.add(event)
+        handleEvent(event)
+    }
+
+    /**
+     * This method is invoked whenever a new event is
+     * registered. Implement logic here to change current
+     * state of the aggregate.
+     */
+    protected abstract fun handleEvent(event: EventType)
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">abstract</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">class</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BaseAggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">ID</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">id</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ID</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB; font-style: italic">EventSourcedAggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">ID</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">/**</span></span>
+<span class="line"><span style="color: #616E88">     * The list changes (events) stored as a mutable list.</span></span>
+<span class="line"><span style="color: #616E88">     */</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> changes </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> mutableListOf</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">getId</span><span style="color: #ECEFF4">()</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ID</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">this</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">id</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">loadFromHistory</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">events</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">List</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        events</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">forEach </span><span style="color: #ECEFF4">{</span><span style="color: #D8DEE9FF"> handleEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">it</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">getChanges</span><span style="color: #ECEFF4">()</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">List</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">EventType</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">this</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">changes</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">toList</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">/**</span></span>
+<span class="line"><span style="color: #616E88">     * Adds the specified event to the list</span></span>
+<span class="line"><span style="color: #616E88">     * of changes and invokes the handleEvent()</span></span>
+<span class="line"><span style="color: #616E88">     * method for applying that event.</span></span>
+<span class="line"><span style="color: #616E88">     */</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">registerEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">event</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventType</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        changes</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">add</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        handleEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">/**</span></span>
+<span class="line"><span style="color: #616E88">     * This method is invoked whenever a new event is</span></span>
+<span class="line"><span style="color: #616E88">     * registered. Implement logic here to change current</span></span>
+<span class="line"><span style="color: #616E88">     * state of the aggregate.</span></span>
+<span class="line"><span style="color: #616E88">     */</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">protected</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">abstract</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">handleEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">event</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">EventType</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>This is everything required to implement a straightforward event-sourced domain model. Now, it is time to use that base class and implement a concrete aggregate. </p>
+
+
+
+<h2>The Book aggregate</h2>
+
+
+
+<p>I like to separate an aggregate&#8217;s contract and implementation, as it allows concentrating more on its behavior and what an aggregate should look like from the outside. The contract of the Book aggregate looks as follows:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="sealed interface Book : EventSourcedAggregate<BookId, BookEvent&gt; {
+
+    fun borrowBook(readerId: ReaderId, startDate: LocalDate, policy: BorrowBookPolicy): Result<Book&gt;
+
+    fun returnBook(returnDate: LocalDate): Result<Book&gt;
+
+    fun reserveBook(readerId: ReaderId, reservationDate: LocalDate): Result<Book&gt;
+
+    fun clearReservation(): Result<Book&gt;
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">sealed</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">interface</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Book</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB; font-style: italic">EventSourcedAggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookEvent</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">borrowBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">readerId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReaderId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">startDate</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">policy</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookPolicy</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Book</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">returnBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">returnDate</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Book</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">reserveBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">readerId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReaderId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">reservationDate</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Book</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">clearReservation</span><span style="color: #ECEFF4">()</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Book</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>Note that this source code is very explicit and uses domain-specific types rather than generic types, wherever appropriate. For example, instead of specifying a UUID as a reader id, we define a special type <code>ReaderId</code> that wraps the corresponding UUID. This approach respects the ubiquitous language principle from DDD.</p>
+
+
+
+<p>We use Kotlin&#8217;s <code>Result</code> type to make behavior even more specific. Instead of throwing exceptions in case of validation errors, which are often invisible from the invoking site, we return a result object that indicates the outcome of an executed command. The caller can then handle both successful executions and error conditions.</p>
+
+
+
+<p>The book aggregate implementation contains all domain logic for executing commands. This is where all the complex domain logic lives. The following code snippet shows the book aggregate class and the borrow method.</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="class BookAggregate(id: BookId) : Book, BaseAggregate<BookId, BookEvent&gt;(id) {
+
+    private var currentLoan: Loan = NoLoan
+    private var currentReservation: Reservation = NoReservation
+
+    override fun borrowBook(readerId: ReaderId, startDate: LocalDate, policy: BorrowBookPolicy): Result<Book&gt; {
+        // check if this book is already loan
+        if (currentLoan is ActiveLoan) {
+            return Result.failure(BookAlreadyLoan(getId()))
+        }
+
+        // check if there is a reservation that was made by another reader
+        if (currentReservation is ActiveReservation) {
+            val reservation = (currentReservation as ActiveReservation)
+            if (reservation.readerId != readerId) {
+                return Result.failure(BookReservedByOtherReader(readerId, reservation.readerId))
+            }
+        }
+
+        // validate student borrow policy (max number of lent books reached etc. 
+        val result = policy.validateIfStudentIsAllowedToBorrowBook(readerId)
+        result.onFailure { return Result.failure(it) }
+
+
+        // the book can be borrowed, thus an event is created
+        val loanId = LoanId(UUID.randomUUID())
+        val endDate = startDate.plusWeeks(6)
+        val event = BookBorrowed(
+            getId(),
+            readerId,
+            loanId,
+            startDate,
+            endDate
+        )
+        registerEvent(event)
+
+        // clear reservation if book was reserved
+        if (currentReservation is ActiveReservation) {
+            clearReservation()
+        }
+
+        // return current instance
+        return Result.success(this)
+    }
+    
+    // ... other methods omitted for clarity reasons ...
+     
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">class</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookAggregate</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">id</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB; font-style: italic">Book</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BaseAggregate</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookEvent</span><span style="color: #81A1C1">&gt;</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">id</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">var</span><span style="color: #D8DEE9FF"> currentLoan</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Loan</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">NoLoan</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">var</span><span style="color: #D8DEE9FF"> currentReservation</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Reservation</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">NoReservation</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">borrowBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">readerId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReaderId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">startDate</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">policy</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookPolicy</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Book</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// check if this book is already loan</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">if</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">currentLoan </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ActiveLoan</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">failure</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">BookAlreadyLoan</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">getId</span><span style="color: #ECEFF4">()))</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// check if there is a reservation that was made by another reader</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">if</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">currentReservation </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ActiveReservation</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> reservation </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">currentReservation </span><span style="color: #81A1C1">as</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ActiveReservation</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">if</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">reservation</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">readerId </span><span style="color: #81A1C1">!=</span><span style="color: #D8DEE9FF"> readerId</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">failure</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">BookReservedByOtherReader</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> reservation</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">))</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// validate student borrow policy (max number of lent books reached etc. </span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> result </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> policy</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">validateIfStudentIsAllowedToBorrowBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">onFailure </span><span style="color: #ECEFF4">{</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">failure</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">it</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// the book can be borrowed, thus an event is created</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> loanId </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LoanId</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">UUID</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">randomUUID</span><span style="color: #ECEFF4">())</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> endDate </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> startDate</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">plusWeeks</span><span style="color: #ECEFF4">(</span><span style="color: #B48EAD">6</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> event </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookBorrowed</span><span style="color: #ECEFF4">(</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            getId</span><span style="color: #ECEFF4">(),</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            readerId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            loanId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            startDate</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            endDate</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        registerEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// clear reservation if book was reserved</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">if</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">currentReservation </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ActiveReservation</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            clearReservation</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// return current instance</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">success</span><span style="color: #ECEFF4">(</span><span style="color: #81A1C1">this</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">// ... other methods omitted for clarity reasons ...</span></span>
+<span class="line"><span style="color: #D8DEE9FF">     </span></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>First, we validate whether the command can be executed or not. In case of a validation error, we return a result object with a well-defined business exception indicating what went wrong.</p>
+
+
+
+<p>After successful validation, a <code>BookBorrowed</code> event is created and added to the list of changes. The<code> registerEvent(event)</code> method in turn invokes the <code>handleEvent()</code> method, which applies changes to the current state of the aggregate. The following code snippet shows the handle method, which performs an exhaustive pattern match of the specified event:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="    override fun handleEvent(event: BookEvent) {  // <<--- invoked by registerEvent()
+        when (event) {
+            is BookRegistered -&gt; handle(event)
+            is BookBorrowed -&gt; handle(event)
+            is BookReturned -&gt; handle(event)
+            is BookReserved -&gt; handle(event)
+            is ReservationCleared -&gt; handle(event)
+        }
+    }
+
+    private fun handle(event: BookBorrowed) {
+        this.currentLoan = ActiveLoan(    // <<<---- apply changes to current state
+            event.loanId,
+            event.readerId,
+            event.loanDate,
+            event.loanEndDate,
+            0
+        )
+    }" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">handleEvent</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">event</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookEvent</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span><span style="color: #D8DEE9FF">  </span><span style="color: #616E88">// &lt;&lt;--- invoked by registerEvent()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">when</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookRegistered</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">-&gt;</span><span style="color: #D8DEE9FF"> handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookBorrowed</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">-&gt;</span><span style="color: #D8DEE9FF"> handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookReturned</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">-&gt;</span><span style="color: #D8DEE9FF"> handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookReserved</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">-&gt;</span><span style="color: #D8DEE9FF"> handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReservationCleared</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">-&gt;</span><span style="color: #D8DEE9FF"> handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">handle</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">event</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookBorrowed</span><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">this</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">currentLoan </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ActiveLoan</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">    </span><span style="color: #616E88">// &lt;&lt;&lt;---- apply changes to current state</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            event</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            event</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            event</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanDate</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            event</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanEndDate</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #B48EAD">0</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>Note that we first register an event and then apply changes to the current state by handling that event. Only then, we can ensure that our application state is built exclusively from events. We could also write a separate state class for keeping the current state of an aggregate, which might be better suited for more complex aggregates with many child entities and value objects.</p>
+
+
+
+<p>Testing the implementation is straightforward and does not require any infrastructure, as shown in the following code snippet:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="class BookTest {
+
+    @Test
+    fun borrowBook() {
+        val bookId = BookId(UUID.randomUUID())
+        val book = BookFactory.registerNewBook(bookId)
+
+        val readerId = ReaderId(UUID.randomUUID())
+        val today = LocalDate.now()
+        val endDate = today.plusWeeks(6)
+        val policy = BorrowBookPolicy()
+        book.borrowBook(readerId, today, policy)
+
+        val event = book.getChanges().last()
+        Assertions.assertTrue(event is BookBorrowed)
+
+        val bookBorrowed = event as BookBorrowed
+        Assertions.assertEquals(bookId, bookBorrowed.bookId)
+        Assertions.assertEquals(readerId, bookBorrowed.readerId)
+        Assertions.assertEquals(today, bookBorrowed.loanDate)
+        Assertions.assertEquals(endDate, bookBorrowed.loanEndDate)
+    }
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">class</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookTest</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">@Test</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">borrowBook</span><span style="color: #ECEFF4">()</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> bookId </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">UUID</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">randomUUID</span><span style="color: #ECEFF4">())</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> book </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookFactory</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">registerNewBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">bookId</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> readerId </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReaderId</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">UUID</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">randomUUID</span><span style="color: #ECEFF4">())</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> today </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">now</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> endDate </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> today</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">plusWeeks</span><span style="color: #ECEFF4">(</span><span style="color: #B48EAD">6</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> policy </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookPolicy</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        book</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">borrowBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> today</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> policy</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> event </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> book</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">getChanges</span><span style="color: #ECEFF4">().</span><span style="color: #D8DEE9FF">last</span><span style="color: #ECEFF4">()</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #8FBCBB">Assertions</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">assertTrue</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">event </span><span style="color: #81A1C1">is</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookBorrowed</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> bookBorrowed </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> event </span><span style="color: #81A1C1">as</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookBorrowed</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #8FBCBB">Assertions</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">assertEquals</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">bookId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> bookBorrowed</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">bookId</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #8FBCBB">Assertions</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">assertEquals</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> bookBorrowed</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #8FBCBB">Assertions</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">assertEquals</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">today</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> bookBorrowed</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanDate</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #8FBCBB">Assertions</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">assertEquals</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">endDate</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> bookBorrowed</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanEndDate</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>For the full implementation of the book aggregate, see my <a href="https://github.com/DomenicDev/personal-blog-examples/blob/main/simple-library/domain/src/main/kotlin/com/cassisi/book/BookAggregate.kt">GitHub repository</a>.</p>
+
+
+
+<h2>The Use Cases Layer</h2>
+
+
+
+<p>The next layer we will look into is the use cases layer, which contains application-specific software. This layer controls the flow of aggregates, including storing and retrieving aggregates to and from the event store, respectively. I prefer to organize code in this layer by feature. Each feature or use case is contained within a corresponding package, as illustrated in the following figure.</p>
+
+
+
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
+
+
+
+<p>For each use case, there is a contract that can be invoked by the next outer layer. Organizing code this way respects the Single Responsibility Principle (SRP), so each class or interface has only one reason to change, which is a change of the according use case itself.</p>
+
+
+
+<p>For example, the contract of the <em>borrow book</em> use case looks as follows:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="sealed interface BorrowBook {
+
+    fun execute(command: BorrowBookCommand): Result<Unit&gt;
+
+}
+
+data class BorrowBookCommand(
+    val bookId: BookId,
+    val readerId: ReaderId,
+    val loanAt: LocalDate
+)" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">sealed</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">interface</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBook</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">execute</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">command</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookCommand</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Unit</span><span style="color: #81A1C1">&gt;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #81A1C1">data</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">class</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookCommand</span><span style="color: #ECEFF4">(</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">bookId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">readerId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">ReaderId</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">loanAt</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">LocalDate</span></span>
+<span class="line"><span style="color: #ECEFF4">)</span></span></code></pre></div>
+
+
+
+<p>Similar to our domain model, we also return a result object indicating the outcome of the use case execution. There is no need for components which invoke that use case to know details on the implementation. The use case&#8217;s implementation is shown in the following code snippet:</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="class BorrowBookExecutor(
+    private val repository: BorrowBookRepository,
+    private val policy: BorrowBookPolicy
+) : BorrowBook {
+
+    override fun execute(command: BorrowBookCommand): Result<Unit&gt; {
+        // load book aggregate from repository
+        val book = repository.get(command.bookId)
+        
+        // try to borrow book
+        val result = book.borrowBook(command.readerId, command.loanAt, policy)
+        
+        return result.fold(
+            {
+                // on success
+                repository.save(it)
+                Result.success(Unit)
+            }, 
+            {
+                // on failure
+                Result.failure(it)
+            }
+        )
+    }
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">class</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookExecutor</span><span style="color: #ECEFF4">(</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">repository</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookRepository</span><span style="color: #ECEFF4">,</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">private</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> </span><span style="color: #D8DEE9">policy</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookPolicy</span></span>
+<span class="line"><span style="color: #ECEFF4">)</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB; font-style: italic">BorrowBook</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">override</span><span style="color: #D8DEE9FF"> </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">execute</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">command</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookCommand</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Result</span><span style="color: #81A1C1">&lt;</span><span style="color: #8FBCBB">Unit</span><span style="color: #81A1C1">&gt;</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// load book aggregate from repository</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> book </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> repository</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">get</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">command</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">bookId</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #616E88">// try to borrow book</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">val</span><span style="color: #D8DEE9FF"> result </span><span style="color: #81A1C1">=</span><span style="color: #D8DEE9FF"> book</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">borrowBook</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">command</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">readerId</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> command</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">loanAt</span><span style="color: #ECEFF4">,</span><span style="color: #D8DEE9FF"> policy</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #81A1C1">return</span><span style="color: #D8DEE9FF"> result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">fold</span><span style="color: #ECEFF4">(</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                </span><span style="color: #616E88">// on success</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                repository</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">save</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">it</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">success</span><span style="color: #ECEFF4">(</span><span style="color: #8FBCBB">Unit</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #ECEFF4">},</span><span style="color: #D8DEE9FF"> </span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                </span><span style="color: #616E88">// on failure</span></span>
+<span class="line"><span style="color: #D8DEE9FF">                </span><span style="color: #8FBCBB">Result</span><span style="color: #ECEFF4">.</span><span style="color: #D8DEE9FF">failure</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9FF">it</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">            </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"><span style="color: #D8DEE9FF">        </span><span style="color: #ECEFF4">)</span></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #ECEFF4">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<p>First, the according book aggregate is loaded from the repository, which is passed as a constructor argument. Second, the <code>borrowBook </code>method of that book is called passing the data of the specified command. When the execution of the command was successful, we store changes of that aggregate in the event store. In case of a validation error, we return a failed result object and pass the business exception. Alternatively, we could map the business exception to a more &#8220;generic&#8221; or application-specific exception containing an error code.</p>
+
+
+
+<p>I prefer to build a separate repository interface for each use case in order to reduce coupling points. Furthermore, those repository interfaces are not very complex, as shown in the following code snippet. The implementation can still use generic base classes in the infrastructure layer to avoid redundant code if desired.</p>
+
+
+
+<div class="wp-block-kevinbatdorf-code-block-pro" style="font-size:1rem;line-height:1.25rem"><span style="display:block;padding:16px 0 0 16px;margin-bottom:-1px;width:100%;text-align:left;background-color:#2e3440ff"><svg xmlns="http://www.w3.org/2000/svg" width="54" height="14" viewBox="0 0 54 14"><g fill="none" fill-rule="evenodd" transform="translate(1 1)"><circle cx="6" cy="6" r="6" fill="#FF5F56" stroke="#E0443E" stroke-width=".5"></circle><circle cx="26" cy="6" r="6" fill="#FFBD2E" stroke="#DEA123" stroke-width=".5"></circle><circle cx="46" cy="6" r="6" fill="#27C93F" stroke="#1AAB29" stroke-width=".5"></circle></g></svg></span><span role="button" tabindex="0" data-code="interface BorrowBookRepository {
+
+    fun get(bookId: BookId): Book
+
+    fun save(book: Book)
+
+}" style="color:#d8dee9ff;display:none" aria-label="Copy" class="code-block-pro-copy-button"><svg xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path class="with-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path><path class="without-check" stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></span><pre class="shiki" style="background-color: #2e3440ff"><code><span class="line"><span style="color: #81A1C1">interface</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BorrowBookRepository</span><span style="color: #D8DEE9FF"> </span><span style="color: #ECEFF4">{</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">get</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">bookId</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">BookId</span><span style="color: #ECEFF4">)</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Book</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #D8DEE9FF">    </span><span style="color: #81A1C1">fun</span><span style="color: #D8DEE9FF"> </span><span style="color: #88C0D0">save</span><span style="color: #ECEFF4">(</span><span style="color: #D8DEE9">book</span><span style="color: #81A1C1">:</span><span style="color: #D8DEE9FF"> </span><span style="color: #8FBCBB">Book</span><span style="color: #ECEFF4">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #ECEFF4">}</span></span></code></pre></div>
+
+
+
+<h2>Infrastructure and additional notes</h2>
+
+
+
+<p>Since the focus of this blog is on the domain and application layer, we won&#8217;t go into detail about the infrastructure layer. All infrastructure concerns are outsourced to the infrastructure layer. This is the layer where we would implement the logic for storing events in an event store such as EventStoreDB. This is also the layer where we would invoke the use cases layer from different entry points, for example, an HTTP endpoint, a GUI, or a console, and present results to the user.</p>
+
+
+
+<h3>Where do you do null checks and the like?</h3>
+
+
+
+<p>As the use cases layer as well as the domain layer uses domain-specific types that already ensure &#8220;valid&#8221; data, validations like null checks, empty strings, and the like are up to the infrastructure layer.  The infrastructure layer converts data from the form most convenient for the infrastructure layer (e.g. a JSON data transfer object) to the form most convenient for the use cases (and domain) layer. In my opinion, it makes sense to avoid polluting the domain with those &#8220;annoying&#8221; validations and allow focusing on core domain logic instead.</p>
+
+
+
+<h3>Is the presented approach appropriate for every use case?</h3>
+
+
+
+<p>Obviously not. Combining Event Sourcing, DDD, and Clean Architecture is neither necessary nor reasonable for all use cases. Simpler subdomains with less complex logic might profit from a more straightforward approach, such as the Transaction Script pattern. </p>
+
+
+
+<h2>Outlook</h2>
+
+
+
+<p>Thanks for reading this post. I hope it gave you some insights on how to build an event-sourced domain model.</p>
+
+
+
+<p>Although very popular, the tactical patterns from DDD (aggregates, value objects, entities, &#8230;) are just one way to build an event-sourced domain model. In the next post, I would like to present an alternative approach that I find worth considering when building an event-sourced domain model. Stay tuned and see you in the next one. </p>
+
+
+
+<p> </p>
+
+
+
+<p>Photo by <a href="https://unsplash.com/@hasanalmasi?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Hasan Almasi</a> on <a href="https://unsplash.com/s/photos/layer?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
+<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
+]]></content:encoded>
+					
+		
+		
+			</item>
+	</channel>
+</rss>
