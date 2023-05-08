@@ -8,9 +8,9 @@
 	>
 
 <channel>
-	<title>Software Architecture Archives | Domenic Cassisi</title>
+	<title>Software Architecture | Domenic Cassisi</title>
 	<atom:link href="/category/software-architecture/feed/" rel="self" type="application/rss+xml" />
-	<link>/category/software-architecture/</link>
+	<link>/</link>
 	<description>Personal Blog</description>
 	<lastBuildDate>Sun, 25 Sep 2022 13:07:35 +0000</lastBuildDate>
 	<language>en-US</language>
@@ -18,12 +18,12 @@
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.1.1</generator>
+	<generator>https://wordpress.org/?v=6.2</generator>
 
 <image>
 	<url>/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
-	<title>Software Architecture Archives | Domenic Cassisi</title>
-	<link>/category/software-architecture/</link>
+	<title>Software Architecture | Domenic Cassisi</title>
+	<link>/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
@@ -40,13 +40,11 @@
 		<category><![CDATA[ddd]]></category>
 		<category><![CDATA[domain-driven design]]></category>
 		<category><![CDATA[event sourcing]]></category>
-		<guid isPermaLink="false">/?p=235</guid>
+		<guid isPermaLink="false">https://dcassisi.com/?p=235</guid>
 
-					<description><![CDATA[<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out my previous post for more information. Today, I would like to focus on combining Event Sourcing with [&#8230;]</p>
-<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
-]]></description>
+					<description><![CDATA[Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out my previous post for more information. Today, I would like to focus on combining Event Sourcing with [&#8230;]]]></description>
 										<content:encoded><![CDATA[
-<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out <a href="/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">my previous post</a> for more information.</p>
+<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out <a href="https://dcassisi.com/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">my previous post</a> for more information.</p>
 
 
 
@@ -58,7 +56,7 @@
 
 
 
-<h2>The example scenario</h2>
+<h2 class="wp-block-heading">The example scenario</h2>
 
 
 
@@ -74,7 +72,7 @@
 
 
 
-<h2>Fundamentals</h2>
+<h2 class="wp-block-heading">Fundamentals</h2>
 
 
 
@@ -226,7 +224,7 @@
 
 
 
-<h2>The Book aggregate</h2>
+<h2 class="wp-block-heading">The Book aggregate</h2>
 
 
 
@@ -478,7 +476,7 @@
 
 
 
-<h2>The Use Cases Layer</h2>
+<h2 class="wp-block-heading">The Use Cases Layer</h2>
 
 
 
@@ -486,7 +484,7 @@
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
 
 
 
@@ -604,7 +602,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Infrastructure and additional notes</h2>
+<h2 class="wp-block-heading">Infrastructure and additional notes</h2>
 
 
 
@@ -612,7 +610,7 @@ data class BorrowBookCommand(
 
 
 
-<h3>Where do you do null checks and the like?</h3>
+<h3 class="wp-block-heading">Where do you do null checks and the like?</h3>
 
 
 
@@ -620,7 +618,7 @@ data class BorrowBookCommand(
 
 
 
-<h3>Is the presented approach appropriate for every use case?</h3>
+<h3 class="wp-block-heading">Is the presented approach appropriate for every use case?</h3>
 
 
 
@@ -628,7 +626,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Outlook</h2>
+<h2 class="wp-block-heading">Outlook</h2>
 
 
 
@@ -645,7 +643,6 @@ data class BorrowBookCommand(
 
 
 <p>Photo by <a href="https://unsplash.com/@hasanalmasi?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Hasan Almasi</a> on <a href="https://unsplash.com/s/photos/layer?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
-<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
 ]]></content:encoded>
 					
 		

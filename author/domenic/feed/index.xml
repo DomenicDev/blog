@@ -8,43 +8,230 @@
 	>
 
 <channel>
-	<title>Domenic Cassisi, Author at Domenic Cassisi</title>
+	<title>Domenic Cassisi | Domenic Cassisi</title>
 	<atom:link href="/author/domenic/feed/" rel="self" type="application/rss+xml" />
-	<link>/author/domenic/</link>
+	<link>/</link>
 	<description>Personal Blog</description>
-	<lastBuildDate>Fri, 14 Oct 2022 08:11:18 +0000</lastBuildDate>
+	<lastBuildDate>Mon, 08 May 2023 17:36:55 +0000</lastBuildDate>
 	<language>en-US</language>
 	<sy:updatePeriod>
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.1.1</generator>
+	<generator>https://wordpress.org/?v=6.2</generator>
 
 <image>
 	<url>/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
-	<title>Domenic Cassisi, Author at Domenic Cassisi</title>
-	<link>/author/domenic/</link>
+	<title>Domenic Cassisi | Domenic Cassisi</title>
+	<link>/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
+		<title>Why is Kafka not Ideal for Event Sourcing?</title>
+		<link>/2023/05/06/why-is-kafka-not-ideal-for-event-sourcing/</link>
+		
+		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
+		<pubDate>Fri, 05 May 2023 22:23:17 +0000</pubDate>
+				<category><![CDATA[Event Sourcing]]></category>
+		<guid isPermaLink="false">/?p=316</guid>
+
+					<description><![CDATA[Kafka is a powerful streaming and messaging platform that is often used to build large-scale systems. There are many use cases for which Kafka is very well suited, but from time to time Kafka gets confused with concepts that it was originally not designed for. One of these concepts is event sourcing. The Apache Software [&#8230;]]]></description>
+										<content:encoded><![CDATA[
+<p>Kafka is a powerful streaming and messaging platform that is often used to build large-scale systems. There are many use cases for which Kafka is very well suited, but from time to time Kafka gets confused with concepts that it was originally not designed for. One of these concepts is event sourcing.</p>
+
+
+
+<p>The Apache Software Foundation describes Kafka on its website as follows:</p>
+
+
+
+<blockquote class="wp-block-quote">
+<p><em>Apache Kafka is an open-source distributed event streaming platform used  by thousands of companies for high-performance data pipelines,  streaming analytics, data integration, and mission-critical  applications.</em></p>
+<cite>(Source: https://kafka.apache.org/)</cite></blockquote>
+
+
+
+<p>Personally, I like vendor descriptions like this because they aim to emphasize exactly what kind of problems a specific tool solves. However, in this case, there is not a single word about event sourcing. When having a closer look at the documentation, there is indeed a small paragraph about event sourcing, but it lacks details.</p>
+
+
+
+<p>It happens frequently that I stumble across posts, videos, and sometimes even books that mention Kafka can be used for event sourcing. While that is not completely wrong, it still raises whether a streaming platform like Kafka is actually able to perform the tasks of an event store. This is exactly what I would like to discuss in this post.</p>
+
+
+
+<h2 class="wp-block-heading">What is an Event Store?</h2>
+
+
+
+<p>An event store is a type of database whose primary focus is on storing and receiving events. In contrast to other database types such as relational databases, event stores &#8220;natively&#8221; support the append-only semantics and immutability principles of events.</p>
+
+
+
+<p>Remember, events cannot be modified once there are created because they represent facts that have already happened within a domain. This is the reason why events are immutable.  </p>
+
+
+
+<h2 class="wp-block-heading">The Relation between Event Sourcing and Event Stores</h2>
+
+
+
+<p>Event Sourcing, in its most basic form, is nothing more than a persistence mechanism. Instead of writing the current state of an object to, let&#8217;s say, a relational database, we store a series of events associated with that object in a specific database: the Event Store. </p>
+
+
+
+<p>In summary, event sourcing is the persistence mechanism, while the event store is the actual database where the events for each object are persisted. </p>
+
+
+
+<p>Note: While there are databases built from the ground up for event sourcing, I also saw event stores that are built on top of established databases, such as PostgreSQL.  </p>
+
+
+
+<p>If you want to learn more about event sourcing, feel free to check out my other blog posts or refer to blog articles from <a href="https://www.eventstore.com/event-sourcing" data-type="URL" data-id="https://www.eventstore.com/event-sourcing">EventStoreDB</a>.</p>
+
+
+
+<h2 class="wp-block-heading">Kafka + Event Sourcing?</h2>
+
+
+
+<p>Kafka is a great and powerful tool when it comes to streaming systems, but is it also ideal for event sourcing? The next subsections aim to give an idea of whether Kafka can actually fulfill the typical requirements of an event store. </p>
+
+
+
+<h3 class="wp-block-heading">Optimistic Concurrency Control</h3>
+
+
+
+<p>A common requirement of a database made for event sourcing is to detect concurrent writes. This is typically achieved by using some kind of optimistic concurrency control. One way to implement this is by using a version number that the event store can use to detect whether an event stream was modified between the read and write action. This approach is successfully used in EventStoreDB, for example. </p>
+
+
+
+<p>Kafka does not support optimistic concurrency control. However, another blog article mentioned that it is possible to lock a whole partition, which would at least allow for pessimistic concurrency. Either way, optimistic locking is a much more scalable and performant solution compared to pessimistic locking. Many other viable solutions, such as a &#8220;database frontend&#8221;, can mitigate this issue but often result in additional complexity.  </p>
+
+
+
+<h3 class="wp-block-heading">Efficient Loading of Single Entities</h3>
+
+
+
+<p>A very common use case of an event store is to load an entity by its identifier. An event store persists an entity&#8217;s events in an event stream. When we want to load and reconstruct an entity&#8217;s state in memory, we have to load the events contained in the corresponding event stream. Event stores such as EventStoreDB are optimized for this use case. </p>
+
+
+
+<p>In contrast, Kafka deals with topics. A topic typically represents a whole type of entity, for example,  customers, orders, or sessions.  Unfortunately, there is no practical way to load a specific entity by its identifier within a topic. We can assume to deal with linear complexity here. </p>
+
+
+
+<p>What feels more natural to you: Loading a single event stream by its ID, or (potentially) loading a whole topic and iterating over that topic to filter out events for a given entity?</p>
+
+
+
+<h3 class="wp-block-heading">Consistent Writes</h3>
+
+
+
+<p>If a series of events is appended to an event stream, we want to make sure that all our events are persisted in one atomic transaction. Partially written or duplicated events would lead to consistency issues. This kind of transaction support is a matter of course for event sourcing solutions like EventStoreDB.</p>
+
+
+
+<p>Actually, Kafka comes with support for transactions for a few years now. Even though Kafka supports transactions, more work is required to accomplish the same effect compared to using an event store solution that provides this guarantee out of the box.  </p>
+
+
+
+<h3 class="wp-block-heading">Storing and Publishing the Same Events?</h3>
+
+
+
+<p>While using events as a persistence mechanism, publishing events to notify other components about a change are two different scenarios. The first scenario typically deals with domain events, while the latter is subject to integration events. Still, there are a lot of cases where the same events are used for persistence and integration.</p>
+
+
+
+<p>Events that are stored as part of the persistence mechanism (event sourcing) have nothing to do with the events that are used to notify other components about a state change in the system. Note that these potential components could be other service boundaries.  </p>
+
+
+
+<p>Event sourcing is just an implementation detail. The question to ask is whether we really want to expose those implementation details outside our service boundary. It feels a bit like pushing a service&#8217;s data store into other services&#8217; faces and saying:  &#8220;Here! Take all my data and do whatever you want with it.&#8221;</p>
+
+
+
+<p>From my experience, we don&#8217;t want other components or services to read data directly from our database. Instead, we want to control which data to expose and which to keep inside our own boundary through a well-defined contract, e.g., an API.   </p>
+
+
+
+<h2 class="wp-block-heading">Use the Right Tool for the Job</h2>
+
+
+
+<p>If you decide to use event sourcing for parts of your system, you probably have a good reason to do so. In such cases, the use of proper tooling is recommended to avoid additional complexity. The event sourcing approach is just different and sometimes even confusing if not understood completely compared to more traditional approaches. Using tools that were just not made for event sourcing won&#8217;t make our lives easier.</p>
+
+
+
+<p>Again, Kafka is a great streaming and messaging platform, and it is designed to solve a specific set of problems. This set of problems does not necessarily include how event-sourced entities should be stored. On the other hand,  an event store is designed for a different set of problems, and certainly cannot (or should not) be used for use cases for which Kafka was designed.</p>
+
+
+
+<p>In my opinion, using the right tool for the job should be the preferred choice, given that all organizational as well as technical constraints allow the use of these tools. </p>
+
+
+
+<h2 class="wp-block-heading">Conclusion</h2>
+
+
+
+<p>In conclusion, can Kafka be used for event sourcing? Yes.<br>Is Kafka an ideal solution for event sourcing? No.</p>
+
+
+
+<p>Kafka is a powerful tool but not the most ideal solution for event sourcing because event stores come with requirements that are just more complex and challenging to meet for a streaming platform like Kafka.  </p>
+
+
+
+<p>In the end, one has to make the tradeoff analysis and ultimate decision on whether to use an established event sourcing solution or Kafka. What remains is the following: A great messaging platform cannot also be the best event store and vice versa.</p>
+
+
+
+<h2 class="wp-block-heading">Further reading</h2>
+
+
+
+<p>If you want to read more about this topic and dedicated event store implementations, check out the following links:</p>
+
+
+
+<ul>
+<li>https://www.eventstore.com/</li>
+
+
+
+<li>https://martendb.io/</li>
+
+
+
+<li>https://event-driven.io/en/event_streaming_is_not_event_sourcing/</li>
+</ul>
+]]></content:encoded>
+					
+		
+		
+			</item>
+		<item>
 		<title>Functional Programming + Event Sourcing = A Good Idea?</title>
 		<link>/2022/10/13/functional-programming-event-sourcing-a-good-idea/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Thu, 13 Oct 2022 21:18:22 +0000</pubDate>
 				<category><![CDATA[Event Sourcing]]></category>
-		<guid isPermaLink="false">/?p=261</guid>
+		<guid isPermaLink="false">https://dcassisi.com/?p=261</guid>
 
-					<description><![CDATA[<p>Functional programming is a popular programming paradigm that lives side-by-side with object-oriented programming. Functions and immutable data structures are core concepts that play an important role in this blog post. In my previous post, I described how we can build an event-sourced domain model by applying domain-driven design (DDD) and its tactical patterns, of which [&#8230;]</p>
-<p>The post <a rel="nofollow" href="/2022/10/13/functional-programming-event-sourcing-a-good-idea/">Functional Programming + Event Sourcing = A Good Idea?</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
-]]></description>
+					<description><![CDATA[Functional programming is a popular programming paradigm that lives side-by-side with object-oriented programming. Functions and immutable data structures are core concepts that play an important role in this blog post. In my previous post, I described how we can build an event-sourced domain model by applying domain-driven design (DDD) and its tactical patterns, of which [&#8230;]]]></description>
 										<content:encoded><![CDATA[
-<p>Functional programming is a popular programming paradigm that lives side-by-side with object-oriented programming. Functions and immutable data structures are core concepts that play an important role in this blog post. In my <a href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">previous post</a>, I described how we can build an event-sourced domain model by applying domain-driven design (DDD) and its tactical patterns, of which many but not all are object-oriented. In this blog post, however, we will aim to build the same event-sourced domain model using a functional approach. It should be noted that the strategic patterns from DDD can still be used to elaborate a domain model, regardless of which implementation approach (e.g. DDD&#8217;s tactical patterns or functional approach) is used. </p>
+<p>Functional programming is a popular programming paradigm that lives side-by-side with object-oriented programming. Functions and immutable data structures are core concepts that play an important role in this blog post. In my <a href="https://dcassisi.com/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">previous post</a>, I described how we can build an event-sourced domain model by applying domain-driven design (DDD) and its tactical patterns, of which many but not all are object-oriented. In this blog post, however, we will aim to build the same event-sourced domain model using a functional approach. It should be noted that the strategic patterns from DDD can still be used to elaborate a domain model, regardless of which implementation approach (e.g. DDD&#8217;s tactical patterns or functional approach) is used. </p>
 
 
 
-<h2>Recap on the domain</h2>
+<h2 class="wp-block-heading">Recap on the domain</h2>
 
 
 
@@ -60,11 +247,11 @@
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="672" height="231" src="/wp-content/uploads/2022/10/state-machine.png" alt="" class="wp-image-263" srcset="/wp-content/uploads/2022/10/state-machine.png 672w, /wp-content/uploads/2022/10/state-machine-480x165.png 480w" sizes="(min-width: 0px) and (max-width: 480px) 480px, (min-width: 481px) 672px, 100vw" /><figcaption>State machine diagram for a book lifecycle</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="672" height="231" src="https://dcassisi.com/wp-content/uploads/2022/10/state-machine.png" alt="" class="wp-image-263" srcset="https://dcassisi.com/wp-content/uploads/2022/10/state-machine.png 672w, https://dcassisi.com/wp-content/uploads/2022/10/state-machine-480x165.png 480w" sizes="(min-width: 0px) and (max-width: 480px) 480px, (min-width: 481px) 672px, 100vw" /><figcaption>State machine diagram for a book lifecycle</figcaption></figure>
 
 
 
-<h2>Events as the Source of Truth</h2>
+<h2 class="wp-block-heading">Events as the Source of Truth</h2>
 
 
 
@@ -146,7 +333,7 @@ data class BookReserved(
 
 
 
-<h2>Building a Functional Domain Model</h2>
+<h2 class="wp-block-heading">Building a Functional Domain Model</h2>
 
 
 
@@ -332,7 +519,7 @@ data class ActiveLoan (
 
 
 
-<h2>It&#8217;s Time for Some Business Logic</h2>
+<h2 class="wp-block-heading">It&#8217;s Time for Some Business Logic</h2>
 
 
 
@@ -496,7 +683,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Improved Testability</h2>
+<h2 class="wp-block-heading">Improved Testability</h2>
 
 
 
@@ -636,7 +823,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Application Services and Infrastructure</h2>
+<h2 class="wp-block-heading">Application Services and Infrastructure</h2>
 
 
 
@@ -722,7 +909,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Final Thoughts</h2>
+<h2 class="wp-block-heading">Final Thoughts</h2>
 
 
 
@@ -742,16 +929,15 @@ data class BorrowBookCommand(
 
 
 
-<h2>Additional Links</h2>
+<h2 class="wp-block-heading">Additional Links</h2>
 
 
 
-<ul><li><a href="https://github.com/DomenicDev/personal-blog-examples/tree/main/functional-library">Source code</a></li><li><a href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">Previous post</a></li></ul>
+<ul><li><a href="https://github.com/DomenicDev/personal-blog-examples/tree/main/functional-library">Source code</a></li><li><a href="https://dcassisi.com/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">Previous post</a></li></ul>
 
 
 
 <p>Photo by <a href="https://unsplash.com/es/@antoine1003?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Antoine Dautry</a> on <a href="https://unsplash.com/s/photos/math?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
-<p>The post <a rel="nofollow" href="/2022/10/13/functional-programming-event-sourcing-a-good-idea/">Functional Programming + Event Sourcing = A Good Idea?</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
 ]]></content:encoded>
 					
 		
@@ -770,13 +956,11 @@ data class BorrowBookCommand(
 		<category><![CDATA[ddd]]></category>
 		<category><![CDATA[domain-driven design]]></category>
 		<category><![CDATA[event sourcing]]></category>
-		<guid isPermaLink="false">/?p=235</guid>
+		<guid isPermaLink="false">https://dcassisi.com/?p=235</guid>
 
-					<description><![CDATA[<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out my previous post for more information. Today, I would like to focus on combining Event Sourcing with [&#8230;]</p>
-<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
-]]></description>
+					<description><![CDATA[Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out my previous post for more information. Today, I would like to focus on combining Event Sourcing with [&#8230;]]]></description>
 										<content:encoded><![CDATA[
-<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out <a href="/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">my previous post</a> for more information.</p>
+<p>Domain-Driven Design (DDD) is a software development approach first described by Eric Evans. In my previous post, I described that the idea of Event Sourcing, CQRS, and DDD complement each other very well. Feel free to check out <a href="https://dcassisi.com/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">my previous post</a> for more information.</p>
 
 
 
@@ -788,7 +972,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>The example scenario</h2>
+<h2 class="wp-block-heading">The example scenario</h2>
 
 
 
@@ -804,7 +988,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Fundamentals</h2>
+<h2 class="wp-block-heading">Fundamentals</h2>
 
 
 
@@ -956,7 +1140,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>The Book aggregate</h2>
+<h2 class="wp-block-heading">The Book aggregate</h2>
 
 
 
@@ -1208,7 +1392,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>The Use Cases Layer</h2>
+<h2 class="wp-block-heading">The Use Cases Layer</h2>
 
 
 
@@ -1216,7 +1400,7 @@ data class BorrowBookCommand(
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
 
 
 
@@ -1334,7 +1518,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Infrastructure and additional notes</h2>
+<h2 class="wp-block-heading">Infrastructure and additional notes</h2>
 
 
 
@@ -1342,7 +1526,7 @@ data class BorrowBookCommand(
 
 
 
-<h3>Where do you do null checks and the like?</h3>
+<h3 class="wp-block-heading">Where do you do null checks and the like?</h3>
 
 
 
@@ -1350,7 +1534,7 @@ data class BorrowBookCommand(
 
 
 
-<h3>Is the presented approach appropriate for every use case?</h3>
+<h3 class="wp-block-heading">Is the presented approach appropriate for every use case?</h3>
 
 
 
@@ -1358,7 +1542,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Outlook</h2>
+<h2 class="wp-block-heading">Outlook</h2>
 
 
 
@@ -1375,7 +1559,6 @@ data class BorrowBookCommand(
 
 
 <p>Photo by <a href="https://unsplash.com/@hasanalmasi?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Hasan Almasi</a> on <a href="https://unsplash.com/s/photos/layer?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a></p>
-<p>The post <a rel="nofollow" href="/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/">How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
 ]]></content:encoded>
 					
 		
@@ -1389,11 +1572,9 @@ data class BorrowBookCommand(
 		<pubDate>Sun, 18 Sep 2022 19:04:02 +0000</pubDate>
 				<category><![CDATA[Domain-Driven Design]]></category>
 		<category><![CDATA[Event Sourcing]]></category>
-		<guid isPermaLink="false">/?p=167</guid>
+		<guid isPermaLink="false">https://dcassisi.com/?p=167</guid>
 
-					<description><![CDATA[<p>From the beginning of March to the end of August 2022, I wrote my master&#8217;s thesis in the field of software architecture. The complete title of my thesis is as follows: Event Sourcing, CQRS, and Domain-Driven Design, and Their Application to Event-Driven Microservices The title on its own involves quite a number of concepts already. [&#8230;]</p>
-<p>The post <a rel="nofollow" href="/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">Event Sourcing, CQRS, DDD, and event-driven microservices. What did I learn from my master&#8217;s thesis?</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
-]]></description>
+					<description><![CDATA[From the beginning of March to the end of August 2022, I wrote my master&#8217;s thesis in the field of software architecture. The complete title of my thesis is as follows: Event Sourcing, CQRS, and Domain-Driven Design, and Their Application to Event-Driven Microservices The title on its own involves quite a number of concepts already. [&#8230;]]]></description>
 										<content:encoded><![CDATA[
 <p>From the beginning of March to the end of August 2022, I wrote my master&#8217;s thesis in the field of software architecture. The complete title of my thesis is as follows:</p>
 
@@ -1407,7 +1588,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Does combining event sourcing, CQRS, and DDD make sense?</h2>
+<h2 class="wp-block-heading">Does combining event sourcing, CQRS, and DDD make sense?</h2>
 
 
 
@@ -1431,7 +1612,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>How do these concepts apply to event-driven microservices?</h2>
+<h2 class="wp-block-heading">How do these concepts apply to event-driven microservices?</h2>
 
 
 
@@ -1465,7 +1646,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>Are these concepts in combination a silver bullet?</h2>
+<h2 class="wp-block-heading">Are these concepts in combination a silver bullet?</h2>
 
 
 
@@ -1477,7 +1658,7 @@ data class BorrowBookCommand(
 
 
 
-<h2>My takeaways</h2>
+<h2 class="wp-block-heading">My takeaways</h2>
 
 
 
@@ -1494,7 +1675,6 @@ data class BorrowBookCommand(
 
 
 <p>Thanks!</p>
-<p>The post <a rel="nofollow" href="/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/">Event Sourcing, CQRS, DDD, and event-driven microservices. What did I learn from my master&#8217;s thesis?</a> appeared first on <a rel="nofollow" href="/">Domenic Cassisi</a>.</p>
 ]]></content:encoded>
 					
 		
