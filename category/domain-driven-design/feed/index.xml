@@ -9,8 +9,8 @@
 
 <channel>
 	<title>Domain-Driven Design | Domenic Cassisi</title>
-	<atom:link href="/category/domain-driven-design/feed/" rel="self" type="application/rss+xml" />
-	<link>/</link>
+	<atom:link href="https://dcassisi.com/category/domain-driven-design/feed/" rel="self" type="application/rss+xml" />
+	<link>https://dcassisi.com/</link>
 	<description>Personal Blog</description>
 	<lastBuildDate>Sun, 25 Sep 2022 13:07:35 +0000</lastBuildDate>
 	<language>en-US</language>
@@ -21,15 +21,15 @@
 	<generator>https://wordpress.org/?v=6.2</generator>
 
 <image>
-	<url>/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
+	<url>https://dcassisi.com/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
 	<title>Domain-Driven Design | Domenic Cassisi</title>
-	<link>/</link>
+	<link>https://dcassisi.com/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
 		<title>How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</title>
-		<link>/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/</link>
+		<link>https://dcassisi.com/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Sun, 25 Sep 2022 13:07:34 +0000</pubDate>
@@ -484,7 +484,7 @@
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg 324w, https://dcassisi.com/wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
 
 
 
@@ -650,7 +650,7 @@ data class BorrowBookCommand(
 			</item>
 		<item>
 		<title>Event Sourcing, CQRS, DDD, and event-driven microservices. What did I learn from my master&#8217;s thesis?</title>
-		<link>/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/</link>
+		<link>https://dcassisi.com/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Sun, 18 Sep 2022 19:04:02 +0000</pubDate>

@@ -9,8 +9,8 @@
 
 <channel>
 	<title>Event Sourcing | Domenic Cassisi</title>
-	<atom:link href="/category/event-sourcing/feed/" rel="self" type="application/rss+xml" />
-	<link>/</link>
+	<atom:link href="https://dcassisi.com/category/event-sourcing/feed/" rel="self" type="application/rss+xml" />
+	<link>https://dcassisi.com/</link>
 	<description>Personal Blog</description>
 	<lastBuildDate>Mon, 08 May 2023 17:36:55 +0000</lastBuildDate>
 	<language>en-US</language>
@@ -21,20 +21,20 @@
 	<generator>https://wordpress.org/?v=6.2</generator>
 
 <image>
-	<url>/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
+	<url>https://dcassisi.com/wp-content/uploads/2022/09/cropped-favicon-32x32.jpg</url>
 	<title>Event Sourcing | Domenic Cassisi</title>
-	<link>/</link>
+	<link>https://dcassisi.com/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
 		<title>Why is Kafka not Ideal for Event Sourcing?</title>
-		<link>/2023/05/06/why-is-kafka-not-ideal-for-event-sourcing/</link>
+		<link>https://dcassisi.com/2023/05/06/why-is-kafka-not-ideal-for-event-sourcing/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Fri, 05 May 2023 22:23:17 +0000</pubDate>
 				<category><![CDATA[Event Sourcing]]></category>
-		<guid isPermaLink="false">/?p=316</guid>
+		<guid isPermaLink="false">https://dcassisi.com/?p=316</guid>
 
 					<description><![CDATA[Kafka is a powerful streaming and messaging platform that is often used to build large-scale systems. There are many use cases for which Kafka is very well suited, but from time to time Kafka gets confused with concepts that it was originally not designed for. One of these concepts is event sourcing. The Apache Software [&#8230;]]]></description>
 										<content:encoded><![CDATA[
@@ -218,7 +218,7 @@
 			</item>
 		<item>
 		<title>Functional Programming + Event Sourcing = A Good Idea?</title>
-		<link>/2022/10/13/functional-programming-event-sourcing-a-good-idea/</link>
+		<link>https://dcassisi.com/2022/10/13/functional-programming-event-sourcing-a-good-idea/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Thu, 13 Oct 2022 21:18:22 +0000</pubDate>
@@ -945,7 +945,7 @@ data class BorrowBookCommand(
 			</item>
 		<item>
 		<title>How to Build an Event-Sourced Domain Model &#8211; A Practical Introduction</title>
-		<link>/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/</link>
+		<link>https://dcassisi.com/2022/09/25/how-to-build-an-event-sourced-domain-model-a-practical-introduction/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Sun, 25 Sep 2022 13:07:34 +0000</pubDate>
@@ -1400,7 +1400,7 @@ data class BorrowBookCommand(
 
 
 
-<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="/wp-content/uploads/2022/09/package.jpg 324w, /wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full"><img decoding="async" width="324" height="262" src="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg" alt="" class="wp-image-242" srcset="https://dcassisi.com/wp-content/uploads/2022/09/package.jpg 324w, https://dcassisi.com/wp-content/uploads/2022/09/package-300x243.jpg 300w" sizes="(max-width: 324px) 100vw, 324px" /><figcaption>The package structure in the use case layer</figcaption></figure>
 
 
 
@@ -1566,7 +1566,7 @@ data class BorrowBookCommand(
 			</item>
 		<item>
 		<title>Event Sourcing, CQRS, DDD, and event-driven microservices. What did I learn from my master&#8217;s thesis?</title>
-		<link>/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/</link>
+		<link>https://dcassisi.com/2022/09/18/event-sourcing-cqrs-ddd-and-event-driven-microservices-what-did-i-learn-from-my-masters-thesis/</link>
 		
 		<dc:creator><![CDATA[Domenic Cassisi]]></dc:creator>
 		<pubDate>Sun, 18 Sep 2022 19:04:02 +0000</pubDate>
